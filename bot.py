@@ -1,7 +1,6 @@
 import requests
 import discord
 from discord.ext import commands
-# import aio_pika
 import json
 import asyncio
 import os
@@ -244,7 +243,6 @@ def remove_transaction_from_transaction_list(transaction):
     update_transaction_cache(new_transaction_list)
 
 
-# run both queue and bot
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
