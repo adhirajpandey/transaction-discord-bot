@@ -19,20 +19,16 @@ EDGE_CACHE_URL = os.getenv("EDGE_CACHE_URL")
 SLEEP_TIME_IN_MINUTES = int(os.getenv("SLEEP_TIME_IN_MINUTES"))
 
 
-
-
 FOOD_SUBCATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snacks"]
 TRANSPORT_SUBCATEGORIES = ["Cab", "Auto", "Bike", "Others"]
 SHOPPING_SUBCATEGORIES = ["Apparel", "Gadgets", "Gifts", "Others"]
 ESSENTIALS_SUBCATEGORIES = ["Household", "Groceries", "Utilities", "Others"]
 
 
-
 # Create an instance of the bot
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
-
 
 
 # Define the view with buttons for categories
@@ -57,7 +53,9 @@ class CategoryView(discord.ui.View):
     async def essentials_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        await self.show_subcategories(interaction, "Essentials", ESSENTIALS_SUBCATEGORIES)
+        await self.show_subcategories(
+            interaction, "Essentials", ESSENTIALS_SUBCATEGORIES
+        )
 
     @discord.ui.button(label="Shopping", style=discord.ButtonStyle.success)
     async def shopping_button(
@@ -70,18 +68,15 @@ class CategoryView(discord.ui.View):
     ):
         for child in self.children:
             child.disabled = True
-        await interaction.message.edit(
-            view=self
-        )  
+        await interaction.message.edit(view=self)
 
         subcategory_view = SubcategoryView(self.transaction, category, subcategories)
 
         await interaction.response.send_message(
             content=f"Please sub-categorize this transaction as {category}-:",
             view=subcategory_view,
-            
         )
-    
+
 
 class SubcategoryView(discord.ui.View):
     def __init__(self, transaction, category, subcategories):
@@ -113,15 +108,17 @@ class SubcategoryView(discord.ui.View):
                 return False  # Stop processing after the category is set
         return True
 
-
     async def ask_for_remark(self, interaction: discord.Interaction, subcategory: str):
         # Ask user if they want to add a remark
         remark_view = RemarkOptionView(self.transaction, self.category, subcategory)
         await interaction.response.send_message(
-            content="Would you like to add remarks?", view=remark_view,
+            content="Would you like to add remarks?",
+            view=remark_view,
         )
-    
-    async def save_category(self, interaction: discord.Interaction, subcategory: str, remarks=None):
+
+    async def save_category(
+        self, interaction: discord.Interaction, subcategory: str, remarks=None
+    ):
         # Save the transaction with the category and subcategory
         transaction = self.transaction
         transaction["category"] = self.category
@@ -146,21 +143,29 @@ class RemarkOptionView(discord.ui.View):
         self.subcategory = subcategory
 
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.primary)
-    async def yes_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def yes_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await self.disbale_buttons(interaction)
-        await interaction.response.send_modal(RemarkModal(self.transaction, self.category, self.subcategory))
+        await interaction.response.send_modal(
+            RemarkModal(self.transaction, self.category, self.subcategory)
+        )
 
     @discord.ui.button(label="No", style=discord.ButtonStyle.secondary)
-    async def no_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def no_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         await self.disbale_buttons(interaction)
-        await SubcategoryView(self.transaction, self.category, []).save_category(interaction, self.subcategory)
+        await SubcategoryView(self.transaction, self.category, []).save_category(
+            interaction, self.subcategory
+        )
 
     async def disbale_buttons(self, interaction: discord.Interaction):
         for child in self.children:
             child.disabled = True
         await interaction.message.edit(view=self)
 
-        
+
 class RemarkModal(discord.ui.Modal):
     def __init__(self, transaction, category, subcategory):
         super().__init__(title="Enter your remarks")
@@ -169,14 +174,15 @@ class RemarkModal(discord.ui.Modal):
         self.subcategory = subcategory
 
         self.remark_input = discord.ui.TextInput(
-            label="Remarks", 
-            placeholder="Enter your remarks here"
+            label="Remarks", placeholder="Enter your remarks here"
         )
         self.add_item(self.remark_input)
 
     async def on_submit(self, interaction: discord.Interaction):
         remark = self.remark_input.value
-        await SubcategoryView(self.transaction, self.category, []).save_category(interaction, self.subcategory, remark)
+        await SubcategoryView(self.transaction, self.category, []).save_category(
+            interaction, self.subcategory, remark
+        )
 
 
 def get_transactions():
@@ -208,7 +214,9 @@ async def send_transaction_message_to_discord(channel, transaction):
 
 async def process_transactions(transactions_list):
     for transaction in transactions_list:
-        await send_transaction_message_to_discord(bot.get_channel(DISCORD_CHANNEL_ID), transaction)
+        await send_transaction_message_to_discord(
+            bot.get_channel(DISCORD_CHANNEL_ID), transaction
+        )
 
 
 def send_transaction_to_n8n(transaction):
@@ -226,20 +234,20 @@ def send_transaction_to_n8n(transaction):
 def update_transaction_cache(transactions):
     url = "https://edge.adhirajpandey.me/cache"
     headers = {
-        "Authorization" : f"Bearer {AUTH_TOKEN}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {AUTH_TOKEN}",
+        "Content-Type": "application/json",
     }
-    data = {
-        "key": "unsaved-transactions",
-        "value": transactions
-    }
+    data = {"key": "unsaved-transactions", "value": transactions}
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
 
+
 def remove_transaction_from_transaction_list(transaction):
     global transactions_list
-    new_transaction_list = [t for t in transactions_list if t["uuid"] != transaction["uuid"]]
-            
+    new_transaction_list = [
+        t for t in transactions_list if t["uuid"] != transaction["uuid"]
+    ]
+
     update_transaction_cache(new_transaction_list)
 
 
@@ -251,7 +259,18 @@ async def on_ready():
         transactions_list = get_transactions()
         print(f"Total transactions received from edge cache = {len(transactions_list)}")
         await process_transactions(transactions_list)
-        await asyncio.sleep(SLEEP_TIME_IN_MINUTES*60) 
+        await asyncio.sleep(SLEEP_TIME_IN_MINUTES * 60)
+
+
+@bot.command(name="txns")
+async def manual_process_transactions(ctx):
+    global transactions_list
+    transactions_list = get_transactions()
+    print(f"Manually processing {len(transactions_list)} transactions...")
+    await ctx.send(f"Manually processing {len(transactions_list)} transactions...")
+    await process_transactions(transactions_list)
+    await ctx.send("Transaction processing completed.")
+
 
 if __name__ == "__main__":
     transactions_list = []
