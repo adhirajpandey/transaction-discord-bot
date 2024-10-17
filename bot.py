@@ -258,18 +258,20 @@ async def on_ready():
         global transactions_list
         transactions_list = get_transactions()
         print(f"Total transactions received from edge cache = {len(transactions_list)}")
-        await process_transactions(transactions_list)
+
+        await bot.get_channel(DISCORD_CHANNEL_ID).send(
+            f"Total Transactions in queue: {len(transactions_list)}"
+        )
         await asyncio.sleep(SLEEP_TIME_IN_MINUTES * 60)
 
 
 @bot.command(name="txns")
 async def manual_process_transactions(ctx):
-    global transactions_list
     transactions_list = get_transactions()
     print(f"Manually processing {len(transactions_list)} transactions...")
     await ctx.send(f"Manually processing {len(transactions_list)} transactions...")
     await process_transactions(transactions_list)
-    await ctx.send("Transaction processing completed.")
+    await ctx.send("All transactions sent.")
 
 
 if __name__ == "__main__":
