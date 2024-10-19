@@ -190,9 +190,11 @@ def get_transactions():
         "Content-Type": "application/json",
     }
 
-    response = requests.get(EDGE_CACHE_URL, headers=headers).json()
-
-    transactions = response["value"]
+    try:
+        response = requests.get(EDGE_CACHE_URL, headers=headers).json()
+        transactions = response["value"]
+    except:
+        transactions = []
 
     return transactions
 
