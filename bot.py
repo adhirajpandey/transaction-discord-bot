@@ -128,7 +128,6 @@ class SubcategoryView(discord.ui.View):
 
         # Send the transaction to n8n
         send_transaction_to_n8n(transaction)
-        remove_transaction_from_transaction_list(transaction)
 
         await interaction.response.send_message(
             content=f"Transaction saved with category: {self.category} and subcategory: {subcategory}"
@@ -229,26 +228,6 @@ def send_transaction_to_n8n(transaction):
     response = requests.post(webhook_url, headers=headers, json=transaction)
 
     response.raise_for_status()
-
-
-def update_transaction_cache(transactions):
-    url = "https://edge.adhirajpandey.me/cache"
-    headers = {
-        "Authorization": f"Bearer {AUTH_TOKEN}",
-        "Content-Type": "application/json",
-    }
-    data = {"key": "unsaved-transactions", "value": transactions}
-    response = requests.post(url, headers=headers, json=data)
-    response.raise_for_status()
-
-
-def remove_transaction_from_transaction_list(transaction):
-    global transactions_list
-    new_transaction_list = [
-        t for t in transactions_list if t["uuid"] != transaction["uuid"]
-    ]
-
-    update_transaction_cache(new_transaction_list)
 
 
 @bot.event
