@@ -73,7 +73,7 @@ class CategoryView(discord.ui.View):
         subcategory_view = SubcategoryView(self.transaction, category, subcategories)
 
         await interaction.response.send_message(
-            content=f"Please sub-categorize this transaction as {category}-:",
+            content=f"Category Selected: {category}. Please sub-categorize this transaction:",
             view=subcategory_view,
         )
 
@@ -198,6 +198,9 @@ def get_transactions():
 
     return transactions
 
+def get_maps_location_url(location):
+    return f"https://www.google.com/maps/search/{location}"
+
 
 async def send_transaction_message_to_discord(channel, transaction):
     reference = transaction["reference"]
@@ -205,7 +208,8 @@ async def send_transaction_message_to_discord(channel, transaction):
         f"Transaction ID: {reference}\n"
         f"Date-Time: {transaction['date']}-{transaction['time']}\n"
         f"Amount: {transaction['amount']}\n"
-        f"Recipient: {transaction['recipient']}\n\n"
+        f"Recipient: {transaction['recipient']}\n"
+        f"Location: {get_maps_location_url(transaction['location'])}\n\n"
         f"Please categorize this transaction:"
     )
 
